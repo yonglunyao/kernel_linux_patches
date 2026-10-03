@@ -1,0 +1,29 @@
+gaokun3: add scripts/ohos-check-dir.sh (from rk3568 kernel.patch)
+
+Several OH common-module Kconfigs gate their symbols on
+`def_bool $(success, $(srctree)/scripts/ohos-check-dir.sh ...)` —
+SECURITY_XPM (security/xpm/Kconfig), UNIFIED_COLLECTION
+(drivers/staging/ucollection), NEWIP (net/newip). The pristine
+kernel_linux_6.6 tree does not carry the script; upstream boards get
+it from their monolithic board patch (rk3568_patch/kernel.patch @
+OpenHarmony-7.0-Release adds it as new file mode 100755, blob
+2833618f9). Without it every $(success,...) check fails, the symbols
+silently resolve to n during `make <board>_defconfig`, and the kernel
+dies in asm-offsets with the latent one-arg PAGEFLAG_FALSE(XPMReadonly)
+calls in include/linux/page-flags.h (the CONFIG_SECURITY_XPM #else
+branch). Extracted verbatim from the proven rk3568 patch.
+---
+diff --git a/scripts/ohos-check-dir.sh b/scripts/ohos-check-dir.sh
+new file mode 100755
+index 000000000..2833618f9
+--- /dev/null
++++ b/scripts/ohos-check-dir.sh
+@@ -0,0 +1,8 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++
++if [ -d "$1" ]; then
++    exit 0
++fi
++
++exit 1
