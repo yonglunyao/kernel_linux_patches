@@ -1,0 +1,54 @@
+From e64fbfd25d9023550a31d45f284c4bc6502b19d6 Mon Sep 17 00:00:00 2001
+From: yonglunyao <yonglunyao@gmail.com>
+Date: Sun, 4 Oct 2026 02:39:39 +0800
+Subject: [PATCH] dma-buf: add exporter pid/comm members and
+ get_dma_buf_from_file decl
+
+Pristine drivers/dma-buf/dma-buf-process-info.c (CONFIG_DMABUF_PROCESS_INFO=y,
+set by the shared standard type fragment) references struct dma_buf
+.exp_pid/.exp_task_comm and get_dma_buf_from_file(), which pristine
+dma-buf.c implements but pristine include/linux/dma-buf.h never
+declares -- the delta ships in board patches (rk3568_patch/kernel.patch
+include/linux/dma-buf.h hunk). Import only the CONFIG_DMABUF_PROCESS_INFO
+parts of that hunk (members + declaration); the DMABUF_CACHE /
+RK_DMABUF_DEBUG / struct lock rockchip deltas are dropped as unused on
+gaokun3.
+---
+ include/linux/dma-buf.h | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/include/linux/dma-buf.h b/include/linux/dma-buf.h
+index 3f31baa..e4c217c 100644
+--- a/include/linux/dma-buf.h
++++ b/include/linux/dma-buf.h
+@@ -422,6 +422,10 @@ struct dma_buf {
+ 	 * obeying fences. See enum dma_resv_usage for further descriptions.
+ 	 */
+ 	struct dma_resv *resv;
++#ifdef CONFIG_DMABUF_PROCESS_INFO
++	pid_t exp_pid;
++	char exp_task_comm[TASK_COMM_LEN];
++#endif
+ 
+ 	/** @poll: for userspace poll support */
+ 	wait_queue_head_t poll;
+@@ -631,4 +635,16 @@ int dma_buf_vmap(struct dma_buf *dmabuf, struct iosys_map *map);
+ void dma_buf_vunmap(struct dma_buf *dmabuf, struct iosys_map *map);
+ int dma_buf_vmap_unlocked(struct dma_buf *dmabuf, struct iosys_map *map);
+ void dma_buf_vunmap_unlocked(struct dma_buf *dmabuf, struct iosys_map *map);
++
++#ifdef CONFIG_DMABUF_PROCESS_INFO
++/**
++ * get_dma_buf_from_file - Get struct dma_buf* from struct file*
++ * @f:	[in]	pointer to struct file, which is associated with a
++ *		dma_buf object.
++ *
++ * If @f IS_ERR_OR_NULL, return NULL.
++ * If @f is not a file associated with dma_buf, return NULL.
++ */
++struct dma_buf *get_dma_buf_from_file(struct file *f);
++#endif /* CONFIG_DMABUF_PROCESS_INFO */
+ #endif /* __DMA_BUF_H__ */
+-- 
+2.43.0
+
