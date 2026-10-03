@@ -1,4 +1,6 @@
-gaokun3: import missing OH common-module headers (from rk3568 kernel.patch)
+From: yonglunyao <yonglunyao@gmail.com>
+Date: Sun, 4 Oct 2026 02:10:00 +0800
+Subject: [PATCH] gaokun3: import missing OH common-module headers (from rk3568 kernel.patch)
 
 The OH 6.6 tree's core headers reference OH-specific headers that the
 kernel_linux_6.6 repo does not carry (mm_types.h -> linux/xpm_types.h

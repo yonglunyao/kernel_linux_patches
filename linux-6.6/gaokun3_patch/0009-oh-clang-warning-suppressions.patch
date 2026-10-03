@@ -1,0 +1,34 @@
+From c7688bbc9e9772a2e29cff16176f69c0d9584851 Mon Sep 17 00:00:00 2001
+From: yonglunyao <yonglunyao@gmail.com>
+Date: Sun, 4 Oct 2026 02:24:21 +0800
+Subject: [PATCH 1/2] scripts: relax clang warnings for OH code (from rk3568
+ board patch)
+
+The pristine OH 6.6 tree ships -Werror=strict-prototypes always-on in
+scripts/Makefile.extrawarn, but OH's own kernel/common-module code
+(e.g. qos_auth rtg_ctrl.c: curr_grp_id()) does not satisfy it under
+clang. Every clang-built OH board carries the same suppression: add
+-Wno-declaration-after-statement / -Wno-strict-prototypes /
+-Wno-int-conversion under ifdef CONFIG_CC_IS_CLANG, verbatim from
+rk3568_patch/kernel.patch (OpenHarmony-7.0-Release).
+---
+ scripts/Makefile.extrawarn | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/scripts/Makefile.extrawarn b/scripts/Makefile.extrawarn
+index 570f64e..ae6da07 100644
+--- a/scripts/Makefile.extrawarn
++++ b/scripts/Makefile.extrawarn
+@@ -188,6 +188,9 @@ KBUILD_CFLAGS += -Wno-shift-negative-value
+ 
+ ifdef CONFIG_CC_IS_CLANG
+ KBUILD_CFLAGS += -Wno-enum-enum-conversion
++KBUILD_CFLAGS += -Wno-declaration-after-statement
++KBUILD_CFLAGS += -Wno-strict-prototypes
++KBUILD_CFLAGS += -Wno-int-conversion
+ endif
+ 
+ ifdef CONFIG_CC_IS_CLANG
+-- 
+2.43.0
+

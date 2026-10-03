@@ -1,4 +1,6 @@
-gaokun3: add scripts/ohos-check-dir.sh (from rk3568 kernel.patch)
+From: yonglunyao <yonglunyao@gmail.com>
+Date: Sun, 4 Oct 2026 02:10:00 +0800
+Subject: [PATCH] gaokun3: add scripts/ohos-check-dir.sh (from rk3568 kernel.patch)
 
 Several OH common-module Kconfigs gate their symbols on
 `def_bool $(success, $(srctree)/scripts/ohos-check-dir.sh ...)` —
