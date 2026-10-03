@@ -1,0 +1,87 @@
+From 00735ae917dd0d2dc83171b94cd9eff3d449b823 Mon Sep 17 00:00:00 2001
+From: yonglunyao <yonglunyao@gmail.com>
+Date: Sun, 4 Oct 2026 04:44:39 +0800
+Subject: [PATCH] arm64, init: system_serial export + INITRD_ASYNC Kconfig
+ (from rk3568 board patch)
+
+arch/arm64/kernel/cpuinfo.c + arch/arm64/include/asm/system_info.h:
+export system_serial_low/high and print Serial in /proc/cpuinfo (OH
+consumers reference these symbols). init/Kconfig: gated INITRD_ASYNC
+option. Deliberately NOT imported: kernel/power/suspend.c deep-sleep
+rejection, arch/arm64/mm/* rk-dma-heap hooks, init/main.c +
+init/initramfs.c thunderboot bits, kernel/rcu/tree_stall.h (no consumer
+in our tree), net/rfkill rockchip glue, sound/soc/rockchip*.
+---
+ arch/arm64/include/asm/system_info.h | 14 ++++++++++++++
+ arch/arm64/kernel/cpuinfo.c          |  9 +++++++++
+ init/Kconfig                         |  6 ++++++
+ 3 files changed, 29 insertions(+)
+ create mode 100644 arch/arm64/include/asm/system_info.h
+
+diff --git a/arch/arm64/include/asm/system_info.h b/arch/arm64/include/asm/system_info.h
+new file mode 100644
+index 0000000..a82fe79
+--- /dev/null
++++ b/arch/arm64/include/asm/system_info.h
+@@ -0,0 +1,14 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef __ASM_ARM_SYSTEM_INFO_H
++#define __ASM_ARM_SYSTEM_INFO_H
++
++#ifndef __ASSEMBLY__
++
++/* information about the system we're running on */
++extern unsigned int system_rev;
++extern unsigned int system_serial_low;
++extern unsigned int system_serial_high;
++
++#endif /* !__ASSEMBLY__ */
++
++#endif /* __ASM_ARM_SYSTEM_INFO_H */
+diff --git a/arch/arm64/kernel/cpuinfo.c b/arch/arm64/kernel/cpuinfo.c
+index 98fda85..2078b98 100644
+--- a/arch/arm64/kernel/cpuinfo.c
++++ b/arch/arm64/kernel/cpuinfo.c
+@@ -25,6 +25,12 @@
+ #include <linux/smp.h>
+ #include <linux/delay.h>
+ 
++unsigned int system_serial_low;
++EXPORT_SYMBOL(system_serial_low);
++
++unsigned int system_serial_high;
++EXPORT_SYMBOL(system_serial_high);
++
+ /*
+  * In case the boot CPU is hotpluggable, we record its initial state and
+  * current state separately. Certain system registers may contain different
+@@ -238,6 +244,9 @@ static int c_show(struct seq_file *m, void *v)
+ 		seq_printf(m, "CPU revision\t: %d\n\n", MIDR_REVISION(midr));
+ 	}
+ 
++	seq_printf(m, "Serial\t\t: %08x%08x\n",
++		   system_serial_high, system_serial_low);
++
+ 	return 0;
+ }
+ 
+diff --git a/init/Kconfig b/init/Kconfig
+index 0d55296..f704631 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -1382,6 +1382,12 @@ if BLK_DEV_INITRD
+ 
+ source "usr/Kconfig"
+ 
++config INITRD_ASYNC
++	bool "Initrd async"
++	depends on NO_GKI
++	help
++	  Init ramdisk async, can reduce kernel init time.
++
+ endif
+ 
+ config BOOT_CONFIG
+-- 
+2.43.0
+
