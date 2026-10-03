@@ -1,0 +1,28 @@
+From 216be521792483d4fa38d8ee62f1200337474d6e Mon Sep 17 00:00:00 2001
+From: yonglunyao <yonglunyao@gmail.com>
+Date: Sat, 3 Oct 2026 14:10:11 +0800
+Subject: [PATCH 2/3] arm64: dts: qcom: build sc8280xp-huawei-gaokun3.dtb
+
+The original buildbot 0099 patch lacked this hunk; the OH side must
+add it for the board dtb to be produced.
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ arch/arm64/boot/dts/qcom/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index 0da076db0418..9d8936502161 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -156,6 +156,7 @@ dtb-$(CONFIG_ARCH_QCOM)	+= sc8180x-lenovo-flex-5g.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sc8180x-primus.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sc8280xp-crd.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sc8280xp-lenovo-thinkpad-x13s.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= sc8280xp-huawei-gaokun3.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sda660-inforce-ifc6560.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sdm450-motorola-ali.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sdm630-sony-xperia-ganges-kirin.dtb
+-- 
+2.43.0
+

@@ -1,0 +1,146 @@
+From a3cd1be451c9d25288bc0b86c11ccda50aacd736 Mon Sep 17 00:00:00 2001
+From: yonglunyao <yonglunyao@gmail.com>
+Date: Sat, 3 Oct 2026 14:15:31 +0800
+Subject: [PATCH 3/3] arm64: dts: qcom: gaokun3 dtc fixes: node ordering and
+ root placement
+
+dtc enforces properties-before-subnodes and only allows bare nodes
+inside the root node (dtsi context), so:
+
+- pcie4_port0 bridge moved after the &pcie4 properties
+- smp2p-slpi moved inside the board root node (as in the SoC dtsi)
+- lpass_tlmm status hoisted above the dmic23 subnodes
+
+Validated: make O=... ARCH=arm64 LLVM=1 LLVM_IAS=1
+qcom/sc8280xp-huawei-gaokun3.dtb builds clean (0 errors); W=1 leaves
+only two graph_child_address warnings on the single-port usb dwc3
+ports blocks (kept in mainline shape for the M2 ss-endpoint restore).
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ .../boot/dts/qcom/sc8280xp-huawei-gaokun3.dts | 74 ++++++++++---------
+ 1 file changed, 38 insertions(+), 36 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/sc8280xp-huawei-gaokun3.dts b/arch/arm64/boot/dts/qcom/sc8280xp-huawei-gaokun3.dts
+index 3d173cae4698..dec37cc9dac0 100644
+--- a/arch/arm64/boot/dts/qcom/sc8280xp-huawei-gaokun3.dts
++++ b/arch/arm64/boot/dts/qcom/sc8280xp-huawei-gaokun3.dts
+@@ -385,6 +385,32 @@ vreg_pmu_rfa_1p7: ldo9 {
+ 			};
+ 		};
+ 	};
++
++	/* M1: SLPI smp2p node absent from OH 6.6.101 sc8280xp.dtsi;
++	 * from mainline v7.2-rc2 (see the remoteproc_slpi note below). */
++	smp2p-slpi {
++		compatible = "qcom,smp2p";
++		qcom,smem = <481>, <430>;
++		interrupts-extended = <&ipcc IPCC_CLIENT_SLPI
++					     IPCC_MPROC_SIGNAL_SMP2P
++					     IRQ_TYPE_EDGE_RISING>;
++		mboxes = <&ipcc IPCC_CLIENT_SLPI
++				IPCC_MPROC_SIGNAL_SMP2P>;
++
++		qcom,local-pid = <0>;
++		qcom,remote-pid = <3>;
++
++		smp2p_slpi_out: master-kernel {
++			qcom,entry-name = "master-kernel";
++			#qcom,smem-state-cells = <1>;
++		};
++
++		smp2p_slpi_in: slave-kernel {
++			qcom,entry-name = "slave-kernel";
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++	};
+ };
+ 
+ &apps_rsc {
+@@ -1022,6 +1048,16 @@ &pcie2a_phy {
+ &pcie4 {
+ 	max-link-speed = <2>;
+ 
++	perst-gpios = <&tlmm 141 GPIO_ACTIVE_LOW>;
++	wake-gpios = <&tlmm 139 GPIO_ACTIVE_LOW>;
++
++	vddpe-3v3-supply = <&vreg_wlan>;
++
++	pinctrl-0 = <&pcie4_default>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
+ 	/* M1: pcie4_port0 bridge node absent from OH 6.6.101 sc8280xp.dtsi;
+ 	 * the WCN6855 WiFi function below hangs off it. From mainline
+ 	 * v7.2-rc2. */
+@@ -1034,16 +1070,6 @@ pcie4_port0: pcie@0 {
+ 		#size-cells = <2>;
+ 		ranges;
+ 	};
+-
+-	perst-gpios = <&tlmm 141 GPIO_ACTIVE_LOW>;
+-	wake-gpios = <&tlmm 139 GPIO_ACTIVE_LOW>;
+-
+-	vddpe-3v3-supply = <&vreg_wlan>;
+-
+-	pinctrl-0 = <&pcie4_default>;
+-	pinctrl-names = "default";
+-
+-	status = "okay";
+ };
+ 
+ &pcie4_port0 {
+@@ -1241,30 +1267,6 @@ &qup2 {
+  * supported by qcom_q6v5_pas.c in 6.6. The node stays disabled and the
+  * enable overlay below is compiled out per the M0 decision (no SLPI
+  * firmware for gaokun3 yet); flip the #if when firmware lands. */
+-smp2p-slpi {
+-	compatible = "qcom,smp2p";
+-	qcom,smem = <481>, <430>;
+-	interrupts-extended = <&ipcc IPCC_CLIENT_SLPI
+-				     IPCC_MPROC_SIGNAL_SMP2P
+-				     IRQ_TYPE_EDGE_RISING>;
+-	mboxes = <&ipcc IPCC_CLIENT_SLPI
+-			IPCC_MPROC_SIGNAL_SMP2P>;
+-
+-	qcom,local-pid = <0>;
+-	qcom,remote-pid = <3>;
+-
+-	smp2p_slpi_out: master-kernel {
+-		qcom,entry-name = "master-kernel";
+-		#qcom,smem-state-cells = <1>;
+-	};
+-
+-	smp2p_slpi_in: slave-kernel {
+-		qcom,entry-name = "slave-kernel";
+-		interrupt-controller;
+-		#interrupt-cells = <2>;
+-	};
+-};
+-
+ &soc {
+ 	remoteproc_slpi: remoteproc@2400000 {
+ 		compatible = "qcom,sc8280xp-slpi-pas", "qcom,sm8350-slpi-pas";
+@@ -1786,6 +1788,8 @@ &xo_board_clk {
+ /* PINCTRL */
+ 
+ &lpass_tlmm {
++	status = "okay";
++
+ 	/* M1: dmic23 pinctrl states absent from OH 6.6.101 sc8280xp.dtsi
+ 	 * (dmic01 exists there); from mainline v7.2-rc2. */
+ 	dmic23_default: dmic23-default-state {
+@@ -1821,8 +1825,6 @@ data-pins {
+ 			input-enable;
+ 		};
+ 	};
+-
+-	status = "okay";
+ };
+ 
+ &pmc8280_1_gpios {
+-- 
+2.43.0
+
